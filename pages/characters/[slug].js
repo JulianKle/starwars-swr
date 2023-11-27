@@ -1,0 +1,48 @@
+import Card from "../../components/Card";
+import Layout from "../../components/Layout";
+import useSWR from "swr";
+import { useRouter } from "next/router";
+
+const fetcher = async (url) => {
+  const res = await fetch(url);
+
+  // If the status code is not in the range 200-299,
+  // we still try to parse and throw it.
+  if (!res.ok) {
+    const error = new Error("An error occurred while fetching the data.");
+    // Attach extra info to the error object.
+    error.info = await res.json();
+    error.status = res.status;
+    throw error;
+  }
+
+  return res.json();
+};
+
+export default function Character() {
+  const router = useRouter();
+  const { slug } = router.query;
+
+  const {
+    data: people,
+    error,
+    isLoading,
+  } = useSWR(`https://swapi.dev/api/people/${slug}`, fetcher);
+
+  if (error) return <div>{error.message}</div>;
+  if (isLoading) return <div>loading...</div>;
+
+  console.log(people);
+
+  return (
+    <Layout>
+      <Card
+        id={slug}
+        name={people.name}
+        height={people.height}
+        eyeColor={people.eye_color}
+        birthYear={people.birth_year}
+      />
+    </Layout>
+  );
+}
